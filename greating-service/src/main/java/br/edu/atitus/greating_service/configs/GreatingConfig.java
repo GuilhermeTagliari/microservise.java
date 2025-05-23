@@ -9,7 +9,6 @@ public class GreatingConfig {
 	
 	private String greating;
 	private String defaultName;
-	
 	public String getGreating() {
 		return greating;
 	}

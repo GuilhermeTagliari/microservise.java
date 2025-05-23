@@ -26,7 +26,7 @@ public class CurrencyEntity {
 	private double conversionRate;
 	
 	@Transient
-	private String enviroment;
+	private String environment;
 	@Transient
 	private double convertedValue;
 	public Long getId() {
@@ -53,19 +53,18 @@ public class CurrencyEntity {
 	public void setConversionRate(double conversionRate) {
 		this.conversionRate = conversionRate;
 	}
-	public String getEnviroment() {
-		return enviroment;
-	}
-	public void setEnviroment(String enviroment) {
-		this.enviroment = enviroment;
-	}
 	public double getConvertedValue() {
 		return convertedValue;
 	}
 	public void setConvertedValue(double convertedValue) {
 		this.convertedValue = convertedValue;
 	}
-	
 
-	
+	public String getEnvironment() {
+		return environment;
+	}
+
+	public void setEnvironment(String environment) {
+		this.environment = environment;
+	}
 }
