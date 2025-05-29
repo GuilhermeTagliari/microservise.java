@@ -1,7 +1,7 @@
 package br.edu.atitus.product_service.controllers;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,16 +16,17 @@ public class OpenProductController {
 
     private final ProductRepository repository;
     private final CurrencyClient currencyClient;
+    private final CacheManager cacheManager;
 
-    public OpenProductController(ProductRepository repository, CurrencyClient currencyClient) {
+    public OpenProductController(ProductRepository repository, CurrencyClient currencyClient, CacheManager cacheManager) {
         this.repository = repository;
         this.currencyClient = currencyClient;
+        this.cacheManager = cacheManager;
     }
 
     @Value("${server.port}")
     private int serverPort;
 
-    @Cacheable(value = "ProductCurrency", key = "#idProduct + '_' + #targetCurrency")
     @GetMapping("/{idProduct}/{targetCurrency}")
     public ResponseEntity<ProductEntity> getProduct(
             @PathVariable Long idProduct,
@@ -33,14 +34,26 @@ public class OpenProductController {
 
         ProductEntity product = repository.findById(idProduct)
                 .orElseThrow(() -> new Exception("Product not found"));
+
         product.setEnviroment("Product-service running on Port: " + serverPort);
 
-        if (targetCurrency.equals(product.getCurrency())) {
+        if (targetCurrency.equalsIgnoreCase(product.getCurrency())) {
             product.setConvertedPrice(product.getPrice());
         } else {
-            CurrencyResponse currency = currencyClient.getCurrency(product.getPrice(), product.getCurrency(), targetCurrency);
-            product.setConvertedPrice(currency.getConvertedValue());
-            product.setEnviroment(product.getEnviroment() + " - " + currency.getEnviroment());
+            String cacheKey = idProduct + "_" + targetCurrency;
+            String cacheName = "ProductCurrency";
+
+            CurrencyResponse currency = cacheManager.getCache(cacheName).get(cacheKey, CurrencyResponse.class);
+
+            if (currency != null) {
+                product.setConvertedPrice(currency.getConvertedValue());
+                product.setEnviroment(product.getEnviroment() + " - Currency from Cache");
+            } else {
+                currency = currencyClient.getCurrency(product.getPrice(), product.getCurrency(), targetCurrency);
+                product.setConvertedPrice(currency.getConvertedValue());
+                product.setEnviroment(product.getEnviroment() + " - " + currency.getEnviroment());
+                cacheManager.getCache(cacheName).put(cacheKey, currency);
+            }
         }
 
         return ResponseEntity.ok(product);
