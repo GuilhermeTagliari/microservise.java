@@ -37,18 +37,19 @@ public class CurrencyController {
 			@PathVariable String source,
 			@PathVariable String target
 			) throws Exception {
-
+		
 		source = source.toUpperCase();
 		target = target.toUpperCase();
 		String dataSource = "None";
+		
 		String nameCache = "Currency";
 		String keyCache = source + target;
 		
 		CurrencyEntity currency = cacheManager.getCache(nameCache).get(keyCache, CurrencyEntity.class);
 		
 		if (currency != null) {
-			dataSource  = "Cache";
-		}else {
+			dataSource = "Cache";
+		} else {
 			currency = new CurrencyEntity();
 			currency.setSource(source);
 			currency.setTarget(target);
@@ -73,9 +74,8 @@ public class CurrencyController {
 				} catch (Exception e) {
 					currency = repository.findBySourceAndTarget(source, target)
 							.orElseThrow(() -> new Exception("Currency Unsupported"));
-					dataSource = "Local Database";				
+					dataSource = "Local Database";
 				}
-				
 			}
 			
 			cacheManager.getCache(nameCache).put(keyCache, currency);
